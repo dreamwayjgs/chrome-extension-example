@@ -1,0 +1,9 @@
+// "content_security_policy": "script-src 'self’ ‘unsafe-eval'; object-src 'self'"
+
+Node.ELEMENT_NODE	1	An Element node like <p> or <div>.
+Node.ATTRIBUTE_NODE	2	An Attribute of an Element.
+Node.TEXT_NODE	3	The actual Text inside an Element or Attr.
+
+"action": {} // manifest version 3필요
+
+https://xeph.blog/2020/08/07/communicate-with-pc-app-using-chrome-extension-native-messaging/

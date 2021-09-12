@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        BODY {
+            width: 520px;
+            min-height: 250px;
+        }
+    </style>
+    <script src="jquery-3.6.0.min.js"></script>
+    <script src="popup.js">
+        $.ajax({
+            url: 'http://localhost:8000',
+            type: 'get',
+            data: { "키": "값" },
+            dataType: 'text',
+            success: function (data) {
+                alert("데이터전송 성공");
+            },
+            error: function (error) {
+                alert("에러");
+            }
+        });
+    </script>
+</head>
+
+<body>
+
+</body>
+
+</html>
