@@ -5,7 +5,62 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import GeoInfo
 import json
+from .NER import NER
+import re
 # Create your views here.
+
+import time
+
+def preprocessing_src_text(src_text):
+    strings = [string.strip() for string in src_text.split('\n') if string.strip()]
+    if not strings:
+        return []
+
+    LEN_STD_STR = 100
+    ret = []
+    for string in strings:
+        if len(string) >= 128:
+            if '?' in string:
+                tmp = [string.strip() for string in string.split('?') if string.strip()]
+            elif '!' in string:
+                tmp = [string.strip() for string in string.split('!') if string.strip()]
+            elif '.' in string:
+                tmp = [string.strip() for string in string.split('.') if string.strip()]
+            else: # 그냥 일정 크기로 나누는 것
+                tmp = [string[i:i+LEN_STD_STR] for i in range(0, len(string), LEN_STD_STR)]
+            ret = ret + tmp
+        else:
+            ret.append(string)
+    return ret
+
+
+def postprocessing_ner_result(entities): # entities : set()
+    if not entities:
+        return []
+
+    ret = []
+    for entity in entities:
+        entity = entity.strip()
+        if '상하이' in entity:
+            print(f"before 상하이 : {entity}")
+            print(f"before LEN(상하이) : {len(entity)}")
+            print(f"{entity[0], entity[-1]}")
+            print(f"{ord(entity[0])}, {ord(entity[-1])}")
+        # tmp = re.sub('[-=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]', '', entity)
+        tmp = re.sub('[^가-힣0-9a-zA-Z]', '', entity)
+        if tmp:
+            ret.append(tmp)
+    ret = list(set(ret))
+    for tmp in ret:
+        if '상하이' in tmp:
+            print(f"after 상하이 : {tmp}")
+            print(f"after LEN(상하이) : {len(tmp)}")
+            print(f"{tmp[0], tmp[-1]}")
+            print(f"{ord(tmp[0])}, {ord(tmp[-1])}")
+
+    return ret
+
+
 
 
 def getLatLng(address):
@@ -85,7 +140,7 @@ def home(request):
 
 @csrf_exempt
 def infos(request):
-    print(request.method)
+    # print(request.method)
 
     if request.method == 'GET':
 
@@ -143,9 +198,46 @@ def infos(request):
         return JsonResponse({'foo': 'bar'})
     elif request.method == 'POST':
         body = json.loads(request.body.decode('utf-8'))
-        print(body["sourceText"])
+        print("IN views.py, START infos")
+        print(f"body : {body}")
+
+        entire_start_time = time.time()
+        preprocessing_start_time = time.time()
+        print("START PREPROCESSING")
+        src_text = preprocessing_src_text(body["sourceText"])
+        print(f"PREPROCESSING EXE time : {time.time()-preprocessing_start_time}")
+        if not src_text:
+            print("Empty text")
+            ret = []
+        else:
+            ner_start_time = time.time()
+            print("START NER")
+            print(f"TYPE : {type(src_text)}, len(src_text) : {len(src_text)}")
+            print(f"src_text[:10] : {src_text[:10]}")
+            # with open('test.txt', 'a') as f:
+            #     for string in src_text:
+            #         f.write(string)
+            #         f.write("\n\n")
+            raw_ret = NER(src_text)
+            print(f"RAW_NER : {raw_ret}")
+            print(f"len(RAW_NER) : {len(raw_ret)}")
+            print(f"NER EXE time : {time.time() - ner_start_time}")
+
+            postprocessing_start_time = time.time()
+            ret = postprocessing_ner_result(raw_ret)
+            print(f"REAL_NER : {ret}")
+            print(f"len(REAL_NER) : {len(ret)}")
+            print(f"POSTPROCESSING EXE time : {time.time()-postprocessing_start_time}")
+
+            print(f"ENTIRE EXE time : {time.time()-entire_start_time}")
+
+
+        # print(body["sourceText"])
         # print(request.POST.get("sourceText", ""))
-        return JsonResponse({'foo33': 'bar33'})
+        # tmp_ret = JsonResponse({'foo33': ret})
+        # print(f"Before return, {tmp_ret}")
+        # print(f"Before return content, {tmp_ret.content}")
+        return JsonResponse({'foo33': ret})
         # body_ = request.POST.get('body')
         # body_ = request.POST['body']
         # print("body! : ", body_)
