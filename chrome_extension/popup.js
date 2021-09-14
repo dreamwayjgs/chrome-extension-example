@@ -1,25 +1,53 @@
-// function sayHello() {
-//     document.body.innerText = "Hello, World!";
-// }
-// // 페이지가 완전히 로딩된 후 함수 실행
-// window.onload = sayHello;
+// DOMContentLoaded 이벤트는 초기 HTML 문서를 완전히 불러오고 분석했을 때 발생
+document.addEventListener("DOMContentLoaded", function () {
+    loadOptions();
+    document.getElementById("buttonCancel").addEventListener("click", function () {
+        window.close();
+    });
 
-let targetUrl = "https://127.0.0.1:8000/infos?sourceText=";
+    document.getElementById("buttonSave").addEventListener("click", function () {
+        saveOptions();
+        window.close();
 
-chrome.runtime.onMessage.addListener(function (request, sender) {
-    if (request.action == "getSource2") {
-        document.body.innerText = request.source;
-    }
-});
+        // chrome.runtime.sendMessage({
+        //     "message": "getOptions",
+        //     "remove": true
+        // });
+    });
 
-function onWindowLoad2() {
-    chrome.tabs.executeScript(null, {
-        file: "getSource2.js"
-    }, function () {
-        if (chrome.runtime.lastError) {
-            //document.body.innerText = 'There was error injecting script:\n' + chrome.extesion.lastError.message;
+    document.getElementById("checkboxShowMaps").addEventListener("change", function () {
+        if (this.checked) {
+            // 처음에 바로 안되는 것 reload되서 그런 듯
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                chrome.tabs.sendMessage(tabs[0].id, { type: "showMaps" }, function (response) {
+                    //alert(response);
+                });
+            });
+        }
+        else {
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                chrome.tabs.sendMessage(tabs[0].id, { type: "cancelShowMaps" }, function (response) {
+                    //alert(response);
+                });
+            });
         }
     });
-}
 
-window.onload = onWindowLoad2;
+    document.getElementById("checkboxGetDirections").addEventListener("change", function () {
+        if (this.checked) {
+            // 처음에 바로 안되는 것 reload되서 그런 듯
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                chrome.tabs.sendMessage(tabs[0].id, { type: "getDirections" }, function (response) {
+                    //alert(response);
+                });
+            });
+        }
+        else {
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                chrome.tabs.sendMessage(tabs[0].id, { type: "cancelGetDirections" }, function (response) {
+                    //alert(response);
+                });
+            });
+        }
+    });
+});

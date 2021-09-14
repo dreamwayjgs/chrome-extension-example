@@ -4,16 +4,15 @@
     "manifest_version": 2,
     "background": {
         "scripts": [
-            "background2.js"
+            "background.js"
         ],
-        "persistent": false
+        "persistent": true
     },
     "browser_action": {
         "default_popup": "popup.html"
     },
     "web_accessible_resources": [
-        "getSource.js",
-        "getSource2.js"
+        "getSource.js"
     ],
     "content_scripts": [
         {
@@ -23,7 +22,7 @@
             "all_frames": true,
             "js": [
                 "getSource.js",
-                "getSource2.js"
+                "content.js"
             ]
         }
     ],

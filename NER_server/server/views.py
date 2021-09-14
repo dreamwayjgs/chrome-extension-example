@@ -11,8 +11,10 @@ import re
 
 import time
 
+
 def preprocessing_src_text(src_text):
-    strings = [string.strip() for string in src_text.split('\n') if string.strip()]
+    strings = [string.strip()
+               for string in src_text.split('\n') if string.strip()]
     if not strings:
         return []
 
@@ -21,20 +23,24 @@ def preprocessing_src_text(src_text):
     for string in strings:
         if len(string) >= 128:
             if '?' in string:
-                tmp = [string.strip() for string in string.split('?') if string.strip()]
+                tmp = [string.strip()
+                       for string in string.split('?') if string.strip()]
             elif '!' in string:
-                tmp = [string.strip() for string in string.split('!') if string.strip()]
+                tmp = [string.strip()
+                       for string in string.split('!') if string.strip()]
             elif '.' in string:
-                tmp = [string.strip() for string in string.split('.') if string.strip()]
-            else: # 그냥 일정 크기로 나누는 것
-                tmp = [string[i:i+LEN_STD_STR] for i in range(0, len(string), LEN_STD_STR)]
+                tmp = [string.strip()
+                       for string in string.split('.') if string.strip()]
+            else:  # 그냥 일정 크기로 나누는 것
+                tmp = [string[i:i+LEN_STD_STR]
+                       for i in range(0, len(string), LEN_STD_STR)]
             ret = ret + tmp
         else:
             ret.append(string)
     return ret
 
 
-def postprocessing_ner_result(entities): # entities : set()
+def postprocessing_ner_result(entities):  # entities : set()
     if not entities:
         return []
 
@@ -59,8 +65,6 @@ def postprocessing_ner_result(entities): # entities : set()
             print(f"{ord(tmp[0])}, {ord(tmp[-1])}")
 
     return ret
-
-
 
 
 def getLatLng(address):
@@ -140,32 +144,8 @@ def home(request):
 
 @csrf_exempt
 def infos(request):
-    # print(request.method)
-
     if request.method == 'GET':
-
-        # var api_url = 'https://openapi.naver.com/v1/papago/n2mt'
-        # var request = require('request')
-        # var options = {
-        #     url: api_url,
-        #     form: {'source': 'en', 'target': 'ko', 'text': req.query.sourceText},
-        #     headers: {'X-Naver-Client-Id': client_id,
-        #               'X-Naver-Client-Secret': client_secret}
-        # }
-        # request.post(options, function(error, response, body) {
-        #     if (!error & & response.statusCode == 200) {
-        #         res.writeHead(200, {'Content-Type': 'text/json;charset=utf-8'})
-        #         res.end(body)
-        #     } else {
-        #         res.status(response.statusCode).end()
-        #         console.log('error = ' + response.statusCode)
-        #     }
-        # })
-
-        # print(request.GET['sourceText'])
-        # Data = request.GET['sourceText']
         Data = request.GET.get('sourceText')
-        # print("getted Data : ", Data)
         key = request.GET.get('key')
         if key:
             print(key)
@@ -182,74 +162,47 @@ def infos(request):
         else:
             print("[ERROR]getLatLng")
             return render(request, 'example2.html')
-
-        # print("[address_latlng]:    ", address_latlng)
-        # return render(request, 'example.html', {'lat': address_latlng[0], 'lon': address_latlng[1]})
-
-        # json_info = json.dumps(LOC_tags, ensure_ascii=False)
-        # print(type(json_info))
-        # print(json_info)
-        # # return JsonResponse({
-        # #     'message': '안녕 파이썬 장고',
-        # #     'items': ['파이썬', '장고', 'AWS', 'Azure'],
-        # # }, json_dumps_params={'ensure_ascii': True})
-        # # return JsonResponse(json_info, safe=False)
-        # # return HttpResponse("hi", status=200)
-        return JsonResponse({'foo': 'bar'})
     elif request.method == 'POST':
         body = json.loads(request.body.decode('utf-8'))
         print("IN views.py, START infos")
         print(f"body : {body}")
 
-        entire_start_time = time.time()
-        preprocessing_start_time = time.time()
-        print("START PREPROCESSING")
-        src_text = preprocessing_src_text(body["sourceText"])
-        print(f"PREPROCESSING EXE time : {time.time()-preprocessing_start_time}")
-        if not src_text:
-            print("Empty text")
-            ret = []
+        start_NER = True
+
+        if start_NER:
+            entire_start_time = time.time()
+            preprocessing_start_time = time.time()
+            print("START PREPROCESSING")
+            src_text = preprocessing_src_text(body["sourceText"])
+            print(
+                f"PREPROCESSING EXE time : {time.time()-preprocessing_start_time}")
+            if not src_text:
+                print("Empty text")
+                ret = []
+                return JsonResponse({'NER_result': 'None'})
+            else:
+                ner_start_time = time.time()
+                print("START NER")
+                print(
+                    f"TYPE : {type(src_text)}, len(src_text) : {len(src_text)}")
+                print(f"src_text[:10] : {src_text[:10]}")
+                # with open('test.txt', 'a') as f:
+                #     for string in src_text:
+                #         f.write(string)
+                #         f.write("\n\n")
+                raw_ret = NER(src_text)
+                print(f"RAW_NER : {raw_ret}")
+                print(f"len(RAW_NER) : {len(raw_ret)}")
+                print(f"NER EXE time : {time.time() - ner_start_time}")
+
+                postprocessing_start_time = time.time()
+                ret = postprocessing_ner_result(raw_ret)
+                print(f"REAL_NER : {ret}")
+                print(f"len(REAL_NER) : {len(ret)}")
+                print(
+                    f"POSTPROCESSING EXE time : {time.time()-postprocessing_start_time}")
+
+                print(f"ENTIRE EXE time : {time.time()-entire_start_time}")
+                return JsonResponse({'NER_result': ret})
         else:
-            ner_start_time = time.time()
-            print("START NER")
-            print(f"TYPE : {type(src_text)}, len(src_text) : {len(src_text)}")
-            print(f"src_text[:10] : {src_text[:10]}")
-            # with open('test.txt', 'a') as f:
-            #     for string in src_text:
-            #         f.write(string)
-            #         f.write("\n\n")
-            raw_ret = NER(src_text)
-            print(f"RAW_NER : {raw_ret}")
-            print(f"len(RAW_NER) : {len(raw_ret)}")
-            print(f"NER EXE time : {time.time() - ner_start_time}")
-
-            postprocessing_start_time = time.time()
-            ret = postprocessing_ner_result(raw_ret)
-            print(f"REAL_NER : {ret}")
-            print(f"len(REAL_NER) : {len(ret)}")
-            print(f"POSTPROCESSING EXE time : {time.time()-postprocessing_start_time}")
-
-            print(f"ENTIRE EXE time : {time.time()-entire_start_time}")
-
-
-        # print(body["sourceText"])
-        # print(request.POST.get("sourceText", ""))
-        # tmp_ret = JsonResponse({'foo33': ret})
-        # print(f"Before return, {tmp_ret}")
-        # print(f"Before return content, {tmp_ret.content}")
-        return JsonResponse({'foo33': ret})
-        # body_ = request.POST.get('body')
-        # body_ = request.POST['body']
-        # print("body! : ", body_)
-        # Data = request.POST.get('sourceText')
-        # Data = request.POST['sourceText']
-        # print("getted Data : ", Data)
-        # key = request.POST.get('key')
-        # key = request.POST['key']
-        # if key:
-        #     print(key)
-        #     if key == 'highlight':
-        #         print("getted highlight Data : ", Data)
-        #         return JsonResponse({'foo': 'bar'})
-        # else:
-        #     return JsonResponse({'foo22': 'bar22'})
+            return JsonResponse({'NER_result': 'None'})
