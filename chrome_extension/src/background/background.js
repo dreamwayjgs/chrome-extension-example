@@ -2,6 +2,11 @@ console.log("background running");
 
 const API_URL = 'http://localhost:59000'
 
+/**
+ * 테스트 서버는 http://localhost:59000/greet 으로 요청할 시 {status: 'Hello', greet: 'Hi!'} 를 반환한다
+ * 여기서 사용되는 console.log 는 확장 프로그램의 뷰 검사: 백그라운드 페이지 에서 확인
+ */
+
 
 // action === 'fetch', method === 'GET' 의 메시지를 받으면 data 를 파라미터로 하는 GET 리퀘스트를 보냄
 /**
